@@ -55,6 +55,12 @@ public class FragmentSignIn extends Fragment {
         );
     }
 
+    private void _getViews_setListener(View view){
+        signIn_btn = view.findViewById(R.id.signIn_btn);
+        password_input = view.findViewById(R.id.password_input);
+        username_input = view.findViewById(R.id.username_input);
+        onButtonClickListener();
+    }
 
 
     private OnFragmentInteractionListener mListener;
@@ -74,11 +80,7 @@ public class FragmentSignIn extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view=inflater.inflate(R.layout.fragment_sign_in, container, false);
-        signIn_btn=(Button)view.findViewById(R.id.signIn_btn);
-        password_input=(EditText) view.findViewById(R.id.password_input);
-        username_input=(EditText) view.findViewById(R.id.username_input);
-        onButtonClickListener();
-
+        _getViews_setListener(view);
         return view;
     }
 

@@ -4,66 +4,117 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link FragmentMap.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link FragmentMap#newInstance} factory method to
- * create an instance of this fragment.
- */
+import com.amap.api.maps.AMap;
+import com.amap.api.maps.CameraUpdateFactory;
+import com.amap.api.maps.MapView;
+import com.amap.api.maps.model.LatLng;
+import com.amap.api.maps.model.MarkerOptions;
+
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class FragmentMap extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
+    private MapView mMapView = null;
+    private AMap aMap=null;
+    private String TAG="M_FragmentMap";
     private OnFragmentInteractionListener mListener;
 
-    public FragmentMap() {
-        // Required empty public constructor
+    private Button search_btn;
+    private EditText search_editText;
+
+//    =============初始化工作====================
+    private void _getViews_setListener(View view){
+        search_btn=view.findViewById(R.id.search_btn);
+        search_editText= view.findViewById(R.id.search_editText);
+        mMapView =  view.findViewById(R.id.map);
+        onButtonClickListener();
+    }
+    private void onButtonClickListener(){
+        search_btn.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        try {
+                            String text = search_editText.getText().toString();
+                            String pattern = "(.*);(.*)";
+                            Pattern p = Pattern.compile(pattern);
+                            Matcher m=p.matcher(text);
+                            m.find();
+                            Log.d(TAG, m.group(1));
+                            double lat=Double.parseDouble(m.group(1));
+                            double lon=Double.parseDouble(m.group(2));
+                            LatLng latLng=new LatLng(lat,lon);
+                            aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,18));
+                        }catch(Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                }
+        );
+    }
+//    =============初始化工作 end====================
+
+//    ================Marker=========================
+    public class Marker{
+        public double lat,lon;
+        public String title,snippet;
+        public Marker(double lat,double lon,String title,String snippet){
+            this.lat=lat;
+            this.lon=lon;
+            this.title=title;
+            this.snippet=snippet;
+        }
+    }
+    private void _addMarkers(List<Marker> markers){
+        for (Marker marker: markers ){
+            _addMarker(marker);
+        }
+    }
+    private void _addMarker(Marker marker){
+        _addMarker(marker.lat,marker.lon,marker.title,marker.snippet);
+    }
+    private void _addMarker(double lat,double lon, String title, String snippet) {
+        // todo 性能 字符串操作 + to append
+        aMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title(title).snippet(snippet+"lat:" + lat + "lon:" + lon));
+    }
+//    ================Marker end=========================
+
+//    ====================Show Position============================
+    private void _showPosition(){
+        GetPosition.M_getData(GetPosition.M_todayTime(),GetPosition.M_todayTime()+GetPosition.M_dayTime,MyGlobal.m_getUserId(),getContext());
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment FragmentMap.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static FragmentMap newInstance(String param1, String param2) {
-        FragmentMap fragment = new FragmentMap();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
 
+
+
+//    ====================Fragment=====================
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_fragment_map, container, false);
+        View view=inflater.inflate(R.layout.fragment_map, container, false);
+        Log.d(TAG, "onCreateView: mMapView");
+
+        _getViews_setListener(view);
+        mMapView.onCreate(savedInstanceState);
+        if (aMap == null) {
+            aMap = mMapView.getMap();
+        }
+        return view;
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -87,6 +138,7 @@ public class FragmentMap extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+        mMapView.onDestroy();
         mListener = null;
     }
 
@@ -104,4 +156,5 @@ public class FragmentMap extends Fragment {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
     }
+//        ====================Fragment  end=====================
 }

@@ -1,9 +1,11 @@
 package com.example.breakegg.mymapdiary;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentManager;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -21,7 +23,8 @@ import com.example.breakegg.mymapdiary.user.ActivityUser;
 import com.example.breakegg.mymapdiary.user.SQLUser;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener,
+                FragmentMap.OnFragmentInteractionListener{
 
     private String TAG="M_MainActivity";
 
@@ -53,6 +56,11 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    private void _mapInit(){
+        getSupportFragmentManager().beginTransaction()
+                .add(R.id.content_frame,new FragmentMap(),"a")
+                .commit();
+    }
 
 
 
@@ -88,6 +96,7 @@ public class MainActivity extends AppCompatActivity
     protected void onStart() {
         super.onStart();
         _headerInit();
+        _mapInit();
     }
 
     @Override
@@ -131,10 +140,12 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
+        if (id == R.id.SetLocation) {
+            Intent intent=new Intent(this,SetPosition.class);
+            startService(intent);
         } else if (id == R.id.nav_gallery) {
-
+            Intent intent=new Intent(MainActivity.this, MainActivityT.class);
+            startActivity(intent);
         } else if (id == R.id.nav_slideshow) {
 
         } else if (id == R.id.nav_manage) {
@@ -150,5 +161,10 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void onFragmentInteraction(Uri uri) {
+
     }
 }

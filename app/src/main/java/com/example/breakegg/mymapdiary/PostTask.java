@@ -1,4 +1,4 @@
-package com.example.breakegg.mymapdiary.user;
+package com.example.breakegg.mymapdiary;
 
 import android.content.Context;
 import android.os.AsyncTask;
@@ -7,8 +7,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
-
-import com.example.breakegg.mymapdiary.MyGlobal;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,16 +31,28 @@ import java.security.MessageDigest;
 
 public class PostTask extends AsyncTask<Object,Void,Object> {
     public static final String TAG="M_PostTask";
-    String url_sign_up= MyGlobal.host+"sign_up.php";
-    String url_sign_in=MyGlobal.host+"sign_in.php";
-    Context context;
+    String url_SetLocation= MyGlobal.host+"setposition.php";
+    Context context=null;
     private Handler handler = null;
 
 
+    PostTask(){
+        this.handler=new Handler();
+        this.context=MyApplication.getContext();
+    }
+    PostTask(Handler handler){
+        this.handler=handler;
+        this.context=MyApplication.getContext()
+    }
+    PostTask(Context context){
+        this.handler=new Handler();
+        this.context=context;
+    }
     PostTask(Handler handler, Context context){
         this.handler=handler;
         this.context=context;
     }
+
 
     private String _postSend(String urlStr,String post_data){
         Log.d(TAG, "_postSend");
@@ -81,76 +91,54 @@ public class PostTask extends AsyncTask<Object,Void,Object> {
         return result;
     }
 
-    protected Object doInBackground(Object... params) {
+    protected String doInBackground(Object... params) {
         Log.d(TAG,"doInBackground");
-
         String type = (String)params[0];
 
-        if(type.equals("sign_up")) {
+        if(type.equals("SetPosition")) {
             try {
                 Log.d(TAG, "sign_up ");
-                String username = (String)params[1];
-                String password = (String)params[2];
-                byte[] password_byte=encryptMD5(password.getBytes());
-                password=new String(password_byte);
-                String post_data = URLEncoder.encode("username", "UTF-8") + "=" + URLEncoder.encode(username, "UTF-8") + "&" +
-                                   URLEncoder.encode("password", "UTF-8") + "=" + URLEncoder.encode(password, "UTF-8");
-                String result=_postSend(url_sign_up,post_data);
+                String lat = (String)params[1];
+                String lon = (String)params[2];
+                String userid = Integer.toString(MyGlobal.m_getUserId());
+                String post_data = URLEncoder.encode("lat", "UTF-8") + "=" + URLEncoder.encode(lat, "UTF-8") + "&" +
+                                   URLEncoder.encode("lon", "UTF-8") + "=" + URLEncoder.encode(lon, "UTF-8") + "&" +
+                                   URLEncoder.encode("userid", "UTF-8") + "=" + URLEncoder.encode(userid, "UTF-8") ;
+                String result=_postSend(url_SetLocation,post_data);
                 Log.d(TAG,result);
                 return result;
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }else  if(type.equals("sign_in")){
-            try {
-                String username = (String)params[1];
-                String password = (String)params[2];
-                byte[] password_byte=encryptMD5(password.getBytes());
-                password=new String(password_byte);
-                String post_data = URLEncoder.encode("username","UTF-8")+"="+URLEncoder.encode(username,"UTF-8")+ "&" +
-                                   URLEncoder.encode("password","UTF-8")+"="+URLEncoder.encode(password,"UTF-8");
-                String result=_postSend(url_sign_in,post_data);
+        }
+        else if(type.equals("GetPosition")){
+            try{
+                Log.d(TAG, "sign_up ");
+                String start_date = (String)params[1];
+                String end_date = (String)params[2];
+                String userid = (String)params[3];
+                String post_data =  URLEncoder.encode("start_date", "UTF-8") + "=" + URLEncoder.encode(start_date, "UTF-8") + "&" +
+                                    URLEncoder.encode("end_date", "UTF-8") + "=" + URLEncoder.encode(end_date, "UTF-8") + "&" +
+                                    URLEncoder.encode("userid", "UTF-8") + "=" + URLEncoder.encode(userid, "UTF-8") ;
+                String result=_postSend(url_SetLocation,post_data);
                 Log.d(TAG,result);
                 return result;
-            }catch (Exception e) {
+            }catch (Exception e){
                 e.printStackTrace();
             }
         }
         return "";
     }
 
-    protected void onPostExecute(Object result){
-        try {
-            //解析服务器数据
-            JSONTokener jsonTokener = new JSONTokener((String) result);
-            JSONObject jSONObject;        
-            jSONObject = (JSONObject) jsonTokener.nextValue();
-            String text = (String) jSONObject.get("text");          
-            int status = (int) jSONObject.get("status");          
-            Log.d(TAG,text);
-            Toast.makeText(context, (String)text,Toast.LENGTH_SHORT).show();
-            //判断(注册,登录...)是否成功 成功退出 否则不变
-
-            if(status==1) {
-                Log.d(TAG,"status==1");
-                int user_id = Integer.parseInt((String)jSONObject.get("user_id"));
-                Log.d(TAG,"status==1.5");
-                String user_name=(String) jSONObject.get("user_name");
-                Log.d(TAG,"status==12");
-                Message m = new Message();
-                Bundle bundle = new Bundle();
-                Log.d(TAG,"status==13");
-                bundle.putInt("user_id",user_id);
-                bundle.putString("user_name",user_name);
-                m.setData(bundle);
-                Log.d(TAG,"status==14");
-                handler.sendMessage(m);
-                Log.d(TAG,"status==15");
-
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
+    protected void onPostExecute(String result){
+        if(result==""){
+            Toast.makeText(context, "程序错误",Toast.LENGTH_SHORT).show();
+            return;
         }
+        Message m = new Message();
+        Bundle bundle = new Bundle();
+        bundle.putString("data",result);
+        handler.sendMessage(m);
     }
 
     public static byte[] encryptMD5(byte[] data) throws Exception {
